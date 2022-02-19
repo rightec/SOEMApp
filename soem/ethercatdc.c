@@ -39,6 +39,8 @@ void ecx_dcsync0(ecx_contextt *context, uint16 slave, boolean act, uint32 CyclTi
    int64 t, t1;
    int32 tc;
 
+   printf("Cycle time is 0x%x\n",CyclTime);
+
    slaveh = context->slavelist[slave].configadr;
    RA = 0;
 
