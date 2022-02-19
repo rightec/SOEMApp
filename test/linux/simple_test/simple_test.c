@@ -28,6 +28,7 @@ boolean inOP;
 uint8 currentgroup = 0;
 
 
+
 void simpletest(char *ifname)
 {
    int i, j, oloop, iloop, chk;
@@ -36,6 +37,9 @@ void simpletest(char *ifname)
 
    int rdl = 0;
    uint8 nSM = 0;
+   int iRefSpeed = 30;
+   int iTargetRefSpeedAttempt = 10000;
+   int iTargetRefPos = -1;
 
 
    printf("Starting simple test\n");
@@ -50,41 +54,40 @@ void simpletest(char *ifname)
       {
          printf("%d slaves found and configured.\n", ec_slavecount);
 
-         /* read SyncManager Communication Type object count */
+         /*TO DELETE
          wkc = ec_SDOread(0, ECT_SDO_SMCOMMTYPE, 0x00, FALSE, &rdl, &nSM, EC_TIMEOUTRXM);
          printf("--------FIRST--------------\n");
          printf("Slave State is : %d\n",ec_slave[0].state);
          printf ("Workcunter now is %d\n",wkc);
          printf ("Bytes read from SDO are %d\n",rdl);
          printf ("Pointer to %d\n",nSM);
+         */
 
 
          ec_config_map(&IOmap);
 
-         /* read SyncManager Communication Type object count */
+         /*TO DELETE
          wkc = ec_SDOread(0, ECT_SDO_SMCOMMTYPE, 0x00, FALSE, &rdl, &nSM, EC_TIMEOUTRXM);
          printf("--------SECOND--------------\n");
          printf("Slave State is : %d\n",ec_slave[0].state);
          printf ("Workcunter now is %d\n",wkc);
          printf ("Bytes read from SDO are %d\n",rdl);
          printf ("Pointer to %d\n",nSM);
-
-
+         */
          ec_configdc();
 
-         /* read SyncManager Communication Type object count */
+         /*TO DELETE
          wkc = ec_SDOread(0, ECT_SDO_SMCOMMTYPE, 0x00, FALSE, &rdl, &nSM, EC_TIMEOUTRXM);
          printf("--------THIRD--------------\n");
          printf("Slave State is : %d\n",ec_slave[0].state);
          printf ("Workcunter now is %d\n",wkc);
          printf ("Bytes read from SDO are %d\n",rdl);
          printf ("Pointer to %d\n",nSM);
-
+         */
 
          printf("Slaves mapped, state to SAFE_OP.\n");
          /* wait for all slaves to reach SAFE_OP state */
          ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
-
 
          /* read SyncManager Communication Type object count */
          wkc = ec_SDOread(0, ECT_SDO_SMCOMMTYPE, 0x00, FALSE, &rdl, &nSM, EC_TIMEOUTRXM);
@@ -129,27 +132,44 @@ void simpletest(char *ifname)
             printf("Operational state reached for all slaves.\n");
             inOP = TRUE;
 
-            /*Slave name is not updated
-            for (i = 0; i <= EC_MAXNAME; i++){
-               printf("Slave Name is: %c at position %d\n ",  ec_slave[0].name[i],i);
-            }*/
-
-             // printf("Slave Cycle Time is: %d \n ",  ec_slave[0].DCcycle); // is 0
-             // printf("Slave Type is: %d \n ",  ec_slave[0].Dtype); // is 0
+            // printf("Slave Cycle Time is: %d \n ",  ec_slave[0].DCcycle); // is 0
+            // printf("Slave Type is: %d \n ",  ec_slave[0].Dtype); // is 0
             printf("Num of output bytes: %d \n ",ec_slave[0].Obytes); 
             
-            (ec_slave[0].outputs[0]) = 11;
             *(ec_slave[0].outputs + 4) = 3;
             (ec_slave[0].outputs[9]) = 15;
+
+            /// Find the name
+            for( i = 0 ; i < ODlist.Entries ; i++)
+            {
+            char name[128] = { 0 };
+            snprintf(name, sizeof(name) - 1, "\"%s\"", ODlist.Name[i]);
+            if (strncmp(name, TECNA_REF_SPEED, (int)strlen(name) ) )
+               {
+                  printf("Find REF at %d entry\n",i);
+                  iTargetRefPos = i;
+                  i = ODlist.Entries;
+               } // End if compare
+            } // End for
+
+            if (iTargetRefPos > -1){
+               (ec_slave[0].outputs[iTargetRefPos]) = iRefSpeed;
+            }
+
+
+
+
+
             /* cyclic loop */
-            for (i = 1; i <= 1; i++)
+            i = 0;
+            while (i <= iTargetRefSpeedAttempt)
             {
                ec_send_processdata();
                wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
                if (wkc >= expectedWKC)
                {
-                  printf("Processdata cycle %4d, WKC %d , O:\n", i, wkc);
+                  printf("Processdata cycle %4d, WKC %d , O:", i, wkc);
 
                   for (j = 0; j < oloop; j++)
                   {
@@ -163,10 +183,15 @@ void simpletest(char *ifname)
                   }
                   printf(" T:%" PRId64 "\r", ec_DCtime);
                   needlf = TRUE;
+
+                  if (ec_slave[0].inputs[iTargetRefPos] == iRefSpeed){
+                     printf("Target reached at: %d\n", i);
+                     i = iTargetRefSpeedAttempt;
+                  } ///
                }
                osal_usleep(5000);
-
-            } // end for cycle
+               i++;
+            } // end while cycle
             inOP = FALSE;
          }
          else
@@ -282,19 +307,19 @@ int main(int argc, char *argv[])
 {
    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
    char argvMain[5][300];
+   int iC= 0;
    if (argc > 1)
    {
-      int iC= 0;
-       while (*argv != NULL)
+
+      while (*argv != NULL)
     {
             printf("ARGV %s\n", *argv);
             printf("strlen(*argv) %d\n", (int)strlen(*argv));
             strcpy(&argvMain[iC][0],*argv);
             printf("argvMain %d is %s\n",iC, &argvMain[iC][0]);
-            argv++;
+             argv++;
             iC++;
     }
-
       if (slavemain((char*) &argvMain[1][0]) == -1)
             return -1;
       

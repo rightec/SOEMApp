@@ -536,12 +536,16 @@ void si_sdo(int cnt)
             char name[128] = { 0 };
 
             ec_readODdescription(i, &ODlist);
+            #ifdef TECNA_ENABLE_VERBOSE
             while(EcatError) printf(" - %s\n", ec_elist2string());
+            #endif
             snprintf(name, sizeof(name) - 1, "\"%s\"", ODlist.Name[i]);
             if (ODlist.ObjectCode[i] == OTYPE_VAR)
             {
                 printf("0x%04x      %-40s      [%s]\n", ODlist.Index[i], name,
                        otype2string(ODlist.ObjectCode[i]));
+
+                       printf("I found this name: %s\n",name);
             }
             else
             {
@@ -549,6 +553,7 @@ void si_sdo(int cnt)
                        ODlist.Index[i], name, otype2string(ODlist.ObjectCode[i]),
                        ODlist.MaxSub[i], ODlist.MaxSub[i]);
             }
+
             memset(&OElist, 0, sizeof(OElist));
             ec_readOE(i, &ODlist, &OElist);
             while(EcatError) printf("- %s\n", ec_elist2string());
@@ -562,8 +567,10 @@ void si_sdo(int cnt)
                 max_sub = ODlist.MaxSub[i];
             }
 
+
             for( j = 0 ; j < max_sub+1 ; j++)
             {
+                #ifdef NOTNOW
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
                     snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[j]);
@@ -576,7 +583,8 @@ void si_sdo(int cnt)
                     }
                     printf("\n");
                 }
-            }
+                #endif
+            } // End for cycle
         }
     }
     else
