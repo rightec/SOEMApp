@@ -38,8 +38,10 @@ void simpletest(char *ifname)
    int rdl = 0;
    uint8 nSM = 0;
    int iRefSpeed = 30;
-   int iTargetRefSpeedAttempt = 10000;
+   int iWelCurr = -1;
+   int iTargetRefSpeedAttempt = 100; // 10000;
    int iTargetRefPos = -1;
+   int iTargetWelCurPos = -1;
 
 
    printf("Starting simple test\n");
@@ -139,24 +141,83 @@ void simpletest(char *ifname)
             *(ec_slave[0].outputs + 4) = 3;
             (ec_slave[0].outputs[9]) = 15;
 
-            /// Find the name
+#ifdef FINDREF_ON_ODLIST_AND_PRINT
+            /// Find the REF_SPEED name - Start
             for( i = 0 ; i < ODlist.Entries ; i++)
             {
             char name[128] = { 0 };
             snprintf(name, sizeof(name) - 1, "\"%s\"", ODlist.Name[i]);
-            if (strncmp(name, TECNA_REF_SPEED, (int)strlen(name) ) )
+//            if (strncmp(name, TECNA_REF_SPEED, (int)strlen(name) ) )
+               printf("ODlist.Name[i] is %s at %d entry. Len is % d\n",ODlist.Name[i],i,(int)strlen(ODlist.Name[i]));
+               printf("ODlist.DataType[i] is %d at %d entry\n",ODlist.DataType[i],i);
+               printf("ODlist.ObjectCode[i] is %d at %d entry\n",ODlist.ObjectCode[i],i);
+               printf("ODlist.Index[i] is %d at %d entry\n",ODlist.Index[i],i);
+               printf("ODlist.MaxSub[i] is %d at %d entry\n",ODlist.MaxSub[i],i);
+            if (strncmp(ODlist.Name[i], TECNA_REF_SPEED, (int)strlen(ODlist.Name[i]) ) )
                {
-                  printf("Find REF at %d entry\n",i);
+                  printf("NOT Found REF %s at %d entry. strlen(name) is %d , (int)strlen(TECNA_REF_SPEED) is %d    \n",name,i,(int)strlen(name),(int)strlen(TECNA_REF_SPEED));
+               }  else {
+                  printf("Find REF %s at %d entry\n",name,i);
                   iTargetRefPos = i;
-                  i = ODlist.Entries;
-               } // End if compare
+                  /// i = ODlist.Entries;
+               }
             } // End for
 
             if (iTargetRefPos > -1){
                (ec_slave[0].outputs[iTargetRefPos]) = iRefSpeed;
             }
+            /// Find the REF_SPEED name - End
+            #endif
 
+            /// Find the WEL_CUR name - Start
+            for( i = 0 ; i < OElist.Entries ; i++)
+            {
+            /// char name[128] = { 0 };
+            /// snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[i]);
+            if (!strncmp(OElist.Name[i], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
+               {
+                  printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElist.Name[i], i);
+                  iTargetWelCurPos = i;
+                  // i = ODlist.Entries;
+               } else {
+                  if (!strncmp(OElist.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElist.Name[i], i);
+                     iTargetRefPos = i;
+                  } else {
+                     printf("Compared KO string found %s at %d entry\n",OElist.Name[i], i);
+                  }
+               }
+            } // End for
 
+            if (iTargetWelCurPos > -1){
+               printf("Target wel curr is at: %d\n", iWelCurr);
+               iWelCurr = (ec_slave[0].inputs[iTargetWelCurPos]);
+            } else {
+                  printf("Target wel curr NOT FOUND\n");
+            }
+
+            if (iTargetRefPos > -1){
+               printf("Target ref speed  is at: %d\n", iTargetRefPos);
+            } else {
+                  printf("Target ref speed NOT FOUND\n");
+            }
+
+            /// Find the WEL_CUR name - End
+
+#ifdef OELIST_AND_PRINT
+            /// Print OEList - Start
+            printf("OElist.Entries is %d \n",OElist.Entries);
+            for( i = 0 ; i < OElist.Entries ; i++)
+            {
+            char name[128] = { 0 };
+            snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[i]);
+            printf("OElist.Name[i] is %s at %d entry. Len is % d\n",OElist.Name[i],i,(int)strlen(OElist.Name[i]));
+            printf("OElist.DataType[i] is %d at %d entry\n",OElist.DataType[i],i);
+            printf("OElist.BitLength[i] is %d at %d entry\n",OElist.BitLength[i] ,i);
+            printf("OElist.ObjAccess[i] is %d at %d entry\n",OElist.ObjAccess[i],i);
+            printf("OElist.ValueInfo[i] is %d at %d entry\n",OElist.ValueInfo[i],i);
+            } // End for
+#endif
 
 
 
@@ -188,6 +249,13 @@ void simpletest(char *ifname)
                      printf("Target reached at: %d\n", i);
                      i = iTargetRefSpeedAttempt;
                   } ///
+
+/*
+                  iWelCurr = ec_slave[0].inputs[iTargetWelCurPos];
+                  if (iWelCurr != -1){
+                     printf("Target wel curr is at: %d\n", iWelCurr);
+                  } ///
+                  */
                }
                osal_usleep(5000);
                i++;
