@@ -11,6 +11,7 @@ Description:
 4) Master commands stops of the operational state as soon slave sets SPEED = REF_SPEED
 
 Log: simple_Test_2402_00.txt
+Tag: @tag_1802_00
 
 
 
