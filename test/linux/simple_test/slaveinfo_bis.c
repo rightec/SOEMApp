@@ -22,6 +22,8 @@
 char IOmap[4096];
 ec_ODlistt ODlist;
 ec_OElistt OElist;
+ec_OElistt OElistArray[100];
+int iOelArryItems = 0;
 boolean printSDO = FALSE;
 boolean printMAP = FALSE;
 char usdo[128];
@@ -290,6 +292,10 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
             idx = etohs(rdat);
             if (idx > 0)
             {
+                printf("\n");
+                printf("idxloop is % d\n",idxloop);
+                printf("\n");
+
                 rdl = sizeof(subcnt); subcnt = 0;
                 /* read number of subindexes of PDO */
                 wkc = ec_SDOread(slave,idx, 0x00, FALSE, &rdl, &subcnt, EC_TIMEOUTRXM);
@@ -297,6 +303,9 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                 /* for each subindex */
                 for (subidxloop = 1; subidxloop <= subidx; subidxloop++)
                 {
+                    printf("\n");
+                    printf("subidxloop is % d\n",subidxloop);
+                    printf("\n");
                     rdl = sizeof(rdat2); rdat2 = 0;
                     /* read SDO that is mapped in PDO */
                     wkc = ec_SDOread(slave, idx, (uint8)subidxloop, FALSE, &rdl, &rdat2, EC_TIMEOUTRXM);
@@ -318,6 +327,13 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                     printf("  [0x%4.4X.%1d] 0x%4.4X:0x%2.2X 0x%2.2X", abs_offset, abs_bit, obj_idx, obj_subidx, bitlen);
                     if((wkc > 0) && OElist.Entries)
                     {
+                        /// printf("OElist.Entries are %d\n", OElist.Entries);
+                        memset(&OElistArray[iOelArryItems],0,sizeof(ec_OElistt));
+                        memcpy(&OElistArray[iOelArryItems],&OElist,sizeof(ec_OElistt));
+                        char *itemName = dtype2string(OElist.DataType[obj_subidx], bitlen);
+                        memcpy(&OElistArray[iOelArryItems].Name,OElist.Name[obj_subidx],20);
+                        /// printf("Collecting for array at item % d\n",iOelArryItems);
+                        iOelArryItems++;
                         printf(" %-12s %s\n", dtype2string(OElist.DataType[obj_subidx], bitlen), OElist.Name[obj_subidx]);
                     }
                     else
@@ -718,8 +734,8 @@ int slavemain(char *argv)
 {
    printf("SOEM (Simple Open EtherCAT Master)\nSlaveinfo\n");
 
-   printSDO = TRUE;
-   printMAP = FALSE;
+   printSDO = FALSE;
+   printMAP = TRUE;
        /* start slaveinfo */
 
 
