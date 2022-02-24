@@ -239,10 +239,38 @@ void simpletest(char *ifname)
             /// Find the WEL_CUR name - End
             #endif
 
+      /// Find the reference speed REF_SPEED
+      for (i = 0; i < iOelArryItems; i++){
+         memset(&OElistTemp,0,sizeof(ec_OElistt));
+         memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
+         printf("OElist item at %d entry.\n",i);
+         for(int h = 0 ; h < OElistTemp.Entries ; h++)
+         {
+            if (!strncmp(OElistTemp.Name[h], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
+               {
+                  printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElistTemp.Name[h], h);
+                  iTargetWelCurPos = i;
+               } else {
+                  if (!strncmp(OElistTemp.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], h);
+                     iTargetRefPos = h;
+                  } /// else
+               }
+         } /// End for
+      } /// end for
+
+
 #ifdef UPDATE_RND_ITEM
             *(ec_slave[0].outputs + 4) = 3;
             (ec_slave[0].outputs[9]) = 15;
 #endif
+            printf("\n");
+            if (iTargetWelCurPos > -1){
+               printf("Target wel curr is at: %d\n", iWelCurr);
+               iWelCurr = (ec_slave[0].inputs[iTargetWelCurPos]);
+            } else {
+                  printf("Target wel curr NOT FOUND\n");
+            }
 
             if (iTargetRefPos > -1){
                printf("Set REF_SPEED to %d\n", iRefSpeed);
