@@ -38,15 +38,17 @@ void simpletest(char *ifname)
    int rdl = 0;
    uint8 nSM = 0;
    int iRefSpeed = 30;
+   uint32  iLastOut = 0x0ABCDEF1;
    int iWelCurr = -1;
    int iTargetRefSpeedAttempt = 100; // 10000;
    int iTargetRefPos = -1;
    int iTargetWelCurPos = -1;
+   int iTargetLastPos = -1;
    static char testRevision[100] = {0};
    static char tagCommit[100] = {0};
 
    sprintf(testRevision, "simple_Test_2402_00.txt");
-   sprintf(tagCommit, "tag_1800_00");
+   sprintf(tagCommit, "tag_2500_09");
    printf("\n");
    printf("Starting simple test revision %s\n", testRevision);
    printf("Against Slave with tag; %s\n", tagCommit);
@@ -248,13 +250,21 @@ void simpletest(char *ifname)
          {
             if (!strncmp(OElistTemp.Name[h], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
                {
-                  printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElistTemp.Name[h], h);
-                  iTargetWelCurPos = i;
+                  printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElistTemp.Name[h], i);
+                  iTargetWelCurPos = h;
+                  h = OElistTemp.Entries;
                } else {
-                  if (!strncmp(OElistTemp.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
-                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], h);
-                     iTargetRefPos = h;
-                  } /// else
+                  if (!strncmp(OElistTemp.Name[h], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], i);
+                     iTargetRefPos = i;
+                     h = OElistTemp.Entries;
+                  } else {
+                     if (!strncmp(OElistTemp.Name[h], TECNA_LAST, (int)strlen(TECNA_LAST) ) ){
+                        printf("Compared OK %s to string found %s at %d entry\n",TECNA_LAST,OElistTemp.Name[h], i);
+                        iTargetLastPos = i;
+                        h = OElistTemp.Entries;
+                     } /// else
+                  }
                }
          } /// End for
       } /// end for
@@ -277,6 +287,13 @@ void simpletest(char *ifname)
                (ec_slave[0].outputs[iTargetRefPos]) = iRefSpeed;
             } else {
                printf("Unable to Set REF_SPEED \n");
+            }
+
+            if (iTargetLastPos > -1){
+               printf("Set LAST_OUT to %d\n", iLastOut);
+               (ec_slave[0].outputs[iTargetLastPos]) = iLastOut;
+            } else {
+               printf("Unable to Set LAST_OUT \n");
             }
             printf("\n");
             printf("Start cyclyc test");

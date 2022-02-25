@@ -22,7 +22,7 @@
 char IOmap[4096];
 ec_ODlistt ODlist;
 ec_OElistt OElist;
-ec_OElistt OElistArray[100];
+ec_OElistt OElistArray[TECNA_NUM_MAX_ADI];
 int iOelArryItems = 0;
 boolean printSDO = FALSE;
 boolean printMAP = FALSE;
@@ -292,9 +292,11 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
             idx = etohs(rdat);
             if (idx > 0)
             {
+                /*
                 printf("\n");
                 printf("idxloop is % d\n",idxloop);
                 printf("\n");
+                */
 
                 rdl = sizeof(subcnt); subcnt = 0;
                 /* read number of subindexes of PDO */
@@ -303,9 +305,11 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                 /* for each subindex */
                 for (subidxloop = 1; subidxloop <= subidx; subidxloop++)
                 {
+                    /*
                     printf("\n");
                     printf("subidxloop is % d\n",subidxloop);
                     printf("\n");
+                    */
                     rdl = sizeof(rdat2); rdat2 = 0;
                     /* read SDO that is mapped in PDO */
                     wkc = ec_SDOread(slave, idx, (uint8)subidxloop, FALSE, &rdl, &rdat2, EC_TIMEOUTRXM);
@@ -336,8 +340,10 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                         iOelArryItems++;
                         printf(" %-12s %s\n", dtype2string(OElist.DataType[obj_subidx], bitlen), OElist.Name[obj_subidx]);
                     }
-                    else
+                    else {
+                        printf("Wkc is not greater than 0 or entry list is 0\n");
                         printf("\n");
+                    }
                     bitoffset += bitlen;
                 };
             };
