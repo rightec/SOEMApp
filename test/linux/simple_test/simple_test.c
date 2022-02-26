@@ -38,7 +38,7 @@ void simpletest(char *ifname)
    int rdl = 0;
    uint8 nSM = 0;
    int iRefSpeed = 30;
-   uint32  iLastOut = 0x0ABCDEF1;
+   uint32  iLastOut = 0x0ABC;
    int iWelCurr = -1;
    int iTargetRefSpeedAttempt = 100; // 10000;
    int iTargetRefPos = -1;
@@ -290,11 +290,24 @@ void simpletest(char *ifname)
             }
 
             if (iTargetLastPos > -1){
-               printf("Set LAST_OUT to %d\n", iLastOut);
-               (ec_slave[0].outputs[iTargetLastPos]) = iLastOut;
+               iTargetLastPos = 1484; /// prova
+               printf("Set LAST_OUT to 0x%x\n", iLastOut);
+               /// It is a 16 bit
+               for (int i32 = 0; i32 < 2; i32++){
+                  uint32 u8 = (iLastOut >> ((8*(1-i32))) & 0x00FF);
+                  // print("u8 is now ")
+                  // u8 = u8 & 0x000000FF;
+                  *(&ec_slave[0].outputs[iTargetLastPos] + i32) = u8;
+                  printf("Byte %d of iLastOut 0x%x is 0x%x\n",i32,iLastOut,u8);
+               } /// end for tag@2602_00
+               
             } else {
                printf("Unable to Set LAST_OUT \n");
             }
+
+            printf("\n");
+
+
             printf("\n");
             printf("Start cyclyc test");
 
