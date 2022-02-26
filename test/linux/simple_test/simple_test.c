@@ -38,7 +38,7 @@ void simpletest(char *ifname)
    int rdl = 0;
    uint8 nSM = 0;
    int iRefSpeed = 30;
-   uint32  iLastOut = 0x0ABC;
+   uint16_t  iLastOut = 0x0ABC;
    int iWelCurr = -1;
    int iTargetRefSpeedAttempt = 100; // 10000;
    int iTargetRefPos = -1;
@@ -47,8 +47,8 @@ void simpletest(char *ifname)
    static char testRevision[100] = {0};
    static char tagCommit[100] = {0};
 
-   sprintf(testRevision, "simple_Test_2402_00.txt");
-   sprintf(tagCommit, "tag_2500_09");
+   sprintf(testRevision, "simple_Test_2602_00.txt");
+   sprintf(tagCommit, "tag_2600_0x");
    printf("\n");
    printf("Starting simple test revision %s\n", testRevision);
    printf("Against Slave with tag; %s\n", tagCommit);
@@ -296,12 +296,11 @@ void simpletest(char *ifname)
                
                uint32_t u32StartPos = OElistArrayTecna[iTargetLastPos].absAddress;
                /// It is a 16 bit
-               for (int i32 = 0; i32 < 2; i32++){
-                  uint32 u8 = (iLastOut >> ((8*(1-i32))) & 0x00FF);
-                  // print("u8 is now ")
-                  // u8 = u8 & 0x000000FF;
-                  *(&ec_slave[0].outputs[u32StartPos] + i32) = u8;
-                  printf("Byte %d of iLastOut 0x%x is 0x%x write to output %d \n",i32,iLastOut,u8,u32StartPos + i32);
+               const uint8_t twoBytes = 2;
+               for (int i32 = 0; i32 < twoBytes; i32++){
+                  uint8_t u8 = (iLastOut >> ((8*(1-i32))) & 0x00FF);
+                  *(&ec_slave[0].outputs[u32StartPos] + (twoBytes - i32) -1) = u8;
+                  printf("Byte %d of iLastOut 0x%x is 0x%x write to output %d \n",i32,iLastOut,u8,u32StartPos + (twoBytes - i32) -1);
                } /// end for tag@2602_00
                
             } else {

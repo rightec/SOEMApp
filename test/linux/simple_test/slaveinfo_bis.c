@@ -347,12 +347,13 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                         sizeof(ec_OElistt)) ; /// tag@2602_01
                         for(int h = 0 ; h < OElist.Entries ; h++)
                         {
-                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",bitlen);
+                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",bitlen); 
 ///                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",OElistArray[iOelArryItems].BitLength[h]);
                             if (OElistArray[iOelArryItems].ObjAccess[h] == 127){
                                 /// tag@2602_01 It is Ouptut
 ///                                u32AbsAddrOut = u32AbsAddrOut +  (OElistArray[iOelArryItems].BitLength[h])/8; 
                                 if (iOelArryItems!= 0){
+                                    /// tag@2602_02
                                     u32AbsAddrOut = u32AbsAddrOut +  (bitlen)/8; 
                                 } /// else
                                 OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrOut;
@@ -361,6 +362,7 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                                 if (OElistArray[iOelArryItems].ObjAccess[h] == 135){
 ///                                    u32AbsAddrIn = u32AbsAddrIn +  (OElistArray[iOelArryItems].BitLength[h])/8; 
                                     if (iOelArryItems!= 0){
+                                        /// tag@2602_02
                                         u32AbsAddrIn = u32AbsAddrIn +  (bitlen)/8; 
                                     } /// else
                                     OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
