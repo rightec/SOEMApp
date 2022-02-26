@@ -18,10 +18,17 @@
 
 #define TECNA_NUM_MAX_ADI   1524 // For ethercat and anybus
 
+typedef struct{
+    /// tag@2602_01
+    ec_OElistt OElistArrayItem;
+    uint32_t absAddress;
+}ec_OElistt_Tecna_t;
+
 extern ec_ODlistt ODlist;
 extern ec_OElistt OElist;
 extern int iOelArryItems;
 extern ec_OElistt OElistArray[TECNA_NUM_MAX_ADI];
+extern ec_OElistt_Tecna_t OElistArrayTecna[TECNA_NUM_MAX_ADI]; /// tag@2602_01
 
 
 

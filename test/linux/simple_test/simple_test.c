@@ -67,6 +67,7 @@ void simpletest(char *ifname)
       printf("OElist.BitLength[i] is %d at %d entry\n",OElistTemp.BitLength[h] ,h);
       printf("OElist.ObjAccess[i] is %d at %d entry\n",OElistTemp.ObjAccess[h],h);
       printf("OElist.ValueInfo[i] is %d at %d entry\n",OElistTemp.ValueInfo[h],h);
+      printf("Absolute value is %d at %d entry\n",OElistArrayTecna[i].absAddress,h);
       printf("\n");
       } /// End for
    } /// end for
@@ -245,7 +246,7 @@ void simpletest(char *ifname)
       for (i = 0; i < iOelArryItems; i++){
          memset(&OElistTemp,0,sizeof(ec_OElistt));
          memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
-         printf("OElist item at %d entry.\n",i);
+         /// printf("OElist item at %d entry.\n",i);
          for(int h = 0 ; h < OElistTemp.Entries ; h++)
          {
             if (!strncmp(OElistTemp.Name[h], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
@@ -290,15 +291,17 @@ void simpletest(char *ifname)
             }
 
             if (iTargetLastPos > -1){
-               iTargetLastPos = 1484; /// prova
+               /// iTargetLastPos = 1484; /// prova
                printf("Set LAST_OUT to 0x%x\n", iLastOut);
+               
+               uint32_t u32StartPos = OElistArrayTecna[iTargetLastPos].absAddress;
                /// It is a 16 bit
                for (int i32 = 0; i32 < 2; i32++){
                   uint32 u8 = (iLastOut >> ((8*(1-i32))) & 0x00FF);
                   // print("u8 is now ")
                   // u8 = u8 & 0x000000FF;
-                  *(&ec_slave[0].outputs[iTargetLastPos] + i32) = u8;
-                  printf("Byte %d of iLastOut 0x%x is 0x%x\n",i32,iLastOut,u8);
+                  *(&ec_slave[0].outputs[u32StartPos] + i32) = u8;
+                  printf("Byte %d of iLastOut 0x%x is 0x%x write to output %d \n",i32,iLastOut,u8,u32StartPos + i32);
                } /// end for tag@2602_00
                
             } else {
