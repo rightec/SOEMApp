@@ -29,6 +29,7 @@ boolean printSDO = FALSE;
 boolean printMAP = FALSE;
 char usdo[128];
 
+extern boolean g_b_cyclic; /// tag@2702_00
 
 #define OTYPE_VAR               0x0007
 #define OTYPE_ARRAY             0x0008
@@ -556,7 +557,6 @@ int si_siiPDO(uint16 slave, uint8 t, int mapoffset, int bitoffset)
     return totalsize;
 }
 
-
 int si_map_sii(int slave)
 {
     int retVal = 0;
@@ -627,6 +627,7 @@ void si_sdo(int cnt)
 
             for( j = 0 ; j < max_sub+1 ; j++)
             {
+                #define NOTNOW
                 #ifdef NOTNOW
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
@@ -739,13 +740,21 @@ int slaveinfo(char *ifname)
             printf(" Ebus current: %d[mA]\n only LRD/LWR:%d\n",
                     ec_slave[cnt].Ebuscurrent, ec_slave[cnt].blockLRW);
             if ((ec_slave[cnt].mbx_proto & ECT_MBXPROT_COE) && printSDO)
-                    si_sdo(cnt);
-                if(printMAP)
             {
-                    if (ec_slave[cnt].mbx_proto & ECT_MBXPROT_COE)
-                        si_map_sdo(cnt);
-                    else
-                        si_map_sii(cnt);
+                printf("SI_SDO function run\n");
+                si_sdo(cnt);
+            }
+            if(printMAP)
+            {
+                if (ec_slave[cnt].mbx_proto & ECT_MBXPROT_COE){
+                    printf("SI_MAP_SDO function run\n");
+                    si_map_sdo(cnt);
+                }
+                else
+                {
+                    printf("SI_MAP_SII function run\n");
+                    si_map_sii(cnt);
+                }
             }
          }
         iRet = 0;
@@ -775,12 +784,16 @@ int slavemain(char *argv)
 {
    printf("SOEM (Simple Open EtherCAT Master)\nSlaveinfo\n");
 
-   printSDO = FALSE;
-   printMAP = TRUE;
+   /// diff between ACY and CYC tag@2702_00
+   if (g_b_cyclic == TRUE){
+       printSDO = FALSE;
+       printMAP = TRUE;
+   } else {
+       printSDO = TRUE;
+       printMAP = FALSE;
+   }
        /* start slaveinfo */
 
-
-    
     strcpy(ifbuf, argv);
 
     printf("ifbuf is: %s\n",ifbuf);
