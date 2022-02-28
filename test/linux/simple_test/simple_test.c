@@ -370,6 +370,31 @@ void simpletest(char *ifname)
          else 
          {
             /// Acyclic
+            printf("Start ACYCLIC TEST\n");
+            /// Print OEList - Start
+            printf("\n");
+            printf("OElist.Entries is %d \n",OElist.Entries);
+            printf("\n");
+
+            for( i = 0 ; i < OElist.Entries ; i++)
+            {
+               if (!strncmp(OElist.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElist.Name[i], i);
+                     iTargetWelCurPos = i;
+                     printf("OElist.Name[i] is %s at %d entry. Len is % d\n",OElist.Name[i],i,(int)strlen(OElist.Name[i]));
+                     printf("OElist.DataType[i] is %d at %d entry\n",OElist.DataType[i],i);
+                     printf("OElist.BitLength[i] is %d at %d entry\n",OElist.BitLength[i] ,i);
+                     printf("OElist.ObjAccess[i] is %d at %d entry\n",OElist.ObjAccess[i],i);
+                     printf("OElist.ValueInfo[i] is %d at %d entry\n",OElist.ValueInfo[i],i);
+                     i = OElist.Entries; /// Break for cycle
+               } /// 
+            } // End for
+
+            if (iTargetWelCurPos == -1){
+               printf(" %s Did not find\n",TECNA_REF_SPEED);
+            } /// else
+            printf("\n");
+
          }
       }
       else

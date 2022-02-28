@@ -602,7 +602,7 @@ void si_sdo(int cnt)
                 printf("0x%04x      %-40s      [%s]\n", ODlist.Index[i], name,
                        otype2string(ODlist.ObjectCode[i]));
 
-                       printf("I found this name: %s\n",name);
+                       /// printf("I found this name: %s\n",name);
             }
             else
             {
@@ -613,6 +613,7 @@ void si_sdo(int cnt)
 
             memset(&OElist, 0, sizeof(OElist));
             ec_readOE(i, &ODlist, &OElist);
+            printf("OEList dump: Entries: %d\n",OElist.Entries);
             while(EcatError) printf("- %s\n", ec_elist2string());
 
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
@@ -629,6 +630,7 @@ void si_sdo(int cnt)
             {
                 #define NOTNOW
                 #ifdef NOTNOW
+                /// printf("OEList dump\n");
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
                     snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[j]);
