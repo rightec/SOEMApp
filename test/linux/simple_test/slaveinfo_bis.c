@@ -274,6 +274,8 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
     uint16 obj_idx;
     int abs_offset, abs_bit;
 
+    printf("ENTER si_PDOassign\n");
+
     rdl = sizeof(rdat); rdat = 0;
     /* read PDO assign subindex 0 ( = number of PDO's) */
     wkc = ec_SDOread(slave, PDOassign, 0x00, FALSE, &rdl, &rdat, EC_TIMEOUTRXM);
@@ -348,7 +350,7 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                         sizeof(ec_OElistt)) ; /// tag@2602_01
                         for(int h = 0 ; h < OElist.Entries ; h++)
                         {
-                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",bitlen); 
+///                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",bitlen); 
 ///                            printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",OElistArray[iOelArryItems].BitLength[h]);
                             if (OElistArray[iOelArryItems].ObjAccess[h] == 127){
                                 /// tag@2602_01 It is Ouptut
@@ -386,6 +388,8 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
         };
     };
     /* return total found bitlength (PDO) */
+    printf("EXIT si_PDOassign\n");
+
     return bsize;
 }
 
@@ -396,6 +400,8 @@ int si_map_sdo(int slave)
     uint8 nSM, iSM, tSM;
     int Tsize, outputs_bo, inputs_bo;
     uint8 SMt_bug_add;
+
+    printf("ENTER si_map_sdo\n");
 
     printf("PDO mapping according to CoE :\n");
     SMt_bug_add = 0;
@@ -449,6 +455,8 @@ int si_map_sdo(int slave)
     /* found some I/O bits ? */
     if ((outputs_bo > 0) || (inputs_bo > 0))
         retVal = 1;
+
+    printf("EXIT si_map_sdo\n");    
     return retVal;
 }
 
@@ -474,6 +482,9 @@ int si_siiPDO(uint16 slave, uint8 t, int mapoffset, int bitoffset)
     PDO->nPDO = 0;
     PDO->Length = 0;
     PDO->Index[1] = 0;
+
+    printf("ENTER si_siiPDO\n");    
+
     for (c = 0 ; c < EC_MAXSM ; c++) PDO->SMbitsize[c] = 0;
     if (t > 1)
         t = 1;
@@ -554,6 +565,9 @@ int si_siiPDO(uint16 slave, uint8 t, int mapoffset, int bitoffset)
         while (c < PDO->Length);
     }
     if (eectl) ec_eeprom2pdi(slave); /* if eeprom control was previously pdi then restore */
+
+    printf("EXIT si_siiPDO\n");    
+   
     return totalsize;
 }
 
@@ -562,6 +576,7 @@ int si_map_sii(int slave)
     int retVal = 0;
     int Tsize, outputs_bo, inputs_bo;
 
+    printf("ENTER si_map_sii\n");
     printf("PDO mapping according to SII :\n");
 
     outputs_bo = 0;
@@ -575,12 +590,17 @@ int si_map_sii(int slave)
     /* found some I/O bits ? */
     if ((outputs_bo > 0) || (inputs_bo > 0))
         retVal = 1;
+    
+    printf("EXIT si_map_sii\n");
+
     return retVal;
 }
 
 void si_sdo(int cnt)
 {
     int i, j;
+
+    printf("ENTER si_sdo\n");
 
     ODlist.Entries = 0;
     memset(&ODlist, 0, sizeof(ODlist));
@@ -597,6 +617,7 @@ void si_sdo(int cnt)
             while(EcatError) printf(" - %s\n", ec_elist2string());
             #endif
             snprintf(name, sizeof(name) - 1, "\"%s\"", ODlist.Name[i]);
+            #ifdef TECNA_ENABLE_VERBOSE
             if (ODlist.ObjectCode[i] == OTYPE_VAR)
             {
                 printf("0x%04x      %-40s      [%s]\n", ODlist.Index[i], name,
@@ -610,10 +631,11 @@ void si_sdo(int cnt)
                        ODlist.Index[i], name, otype2string(ODlist.ObjectCode[i]),
                        ODlist.MaxSub[i], ODlist.MaxSub[i]);
             }
+            #endif
 
             memset(&OElist, 0, sizeof(OElist));
             ec_readOE(i, &ODlist, &OElist);
-            printf("OEList dump: Entries: %d\n",OElist.Entries);
+            /// printf("OEList dump: Entries: %d\n",OElist.Entries);
             while(EcatError) printf("- %s\n", ec_elist2string());
 
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
@@ -628,8 +650,7 @@ void si_sdo(int cnt)
 
             for( j = 0 ; j < max_sub+1 ; j++)
             {
-                #define NOTNOW
-                #ifdef NOTNOW
+                 #ifdef PRINT_NOW
                 /// printf("OEList dump\n");
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
@@ -639,7 +660,9 @@ void si_sdo(int cnt)
                            access2string(OElist.ObjAccess[j]));
                     if ((OElist.ObjAccess[j] & 0x0007))
                     {
+               
                         printf("%s", SDO2string(cnt, ODlist.Index[i], j, OElist.DataType[j]));
+                
                     }
                     printf("\n");
                 }
@@ -651,6 +674,7 @@ void si_sdo(int cnt)
     {
         while(EcatError) printf("%s", ec_elist2string());
     }
+    printf("EXIT si_sdo\n");
 }
 
 int slaveinfo(char *ifname)
@@ -791,8 +815,11 @@ int slavemain(char *argv)
        printSDO = FALSE;
        printMAP = TRUE;
    } else {
-       printSDO = TRUE;
+       printSDO = FALSE;
+       printMAP = TRUE;
+      /* printSDO = TRUE;
        printMAP = FALSE;
+       */
    }
        /* start slaveinfo */
 

@@ -47,23 +47,26 @@ void simpletest(char *ifname)
    int iTargetLastPos = -1;
    static char testRevision[100] = {0};
    static char tagCommit[100] = {0};
+   ec_OElistt OElistTemp;
 
-   sprintf(testRevision, "simple_Test_2702_00.txt");
-   sprintf(tagCommit, "tag_2700_0x");
+
+   sprintf(testRevision, "tag@0103_00.txt");
+   sprintf(tagCommit, "tag_0103_0x");
    printf("\n");
    printf("Starting simple test revision %s\n", testRevision);
    printf("Against Slave with tag; %s\n", tagCommit);
    printf("\n");
 
+#ifdef PRINT_MAPPED_OELIST
    printf("We mapped %d items in the OEList Array\n",iOelArryItems);
-   ec_OElistt OElistTemp;
    for (i = 0; i < iOelArryItems; i++){
       memset(&OElistTemp,0,sizeof(ec_OElistt));
-      memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
+      memcpy(&OElistTemp,&OElistArrayTecna[i].OElistArrayItem,sizeof(ec_OElistt));
       printf("OElist item at %d entry.\n",i);
       for(int h = 0 ; h < OElistTemp.Entries ; h++)
       {
       printf("OElist.Name[i] is %s at %d entry.\n",OElistTemp.Name[h],h);
+      printf("OElist Name lenght %d\n",(int)strlen(OElistTemp.Name[h]));
       printf("OElist.DataType[i] is %d at %d entry\n",OElistTemp.DataType[h],h);
       printf("OElist.BitLength[i] is %d at %d entry\n",OElistTemp.BitLength[h] ,h);
       printf("OElist.ObjAccess[i] is %d at %d entry\n",OElistTemp.ObjAccess[h],h);
@@ -72,6 +75,7 @@ void simpletest(char *ifname)
       printf("\n");
       } /// End for
    } /// end for
+   #endif
 
 #ifdef ODLIST_SCAN_AND_PRINT
    printf("Scan and Print full ODList\n");
@@ -284,7 +288,6 @@ void simpletest(char *ifname)
                }
 
                if (iTargetLastPos > -1){
-                  /// iTargetLastPos = 1484; /// prova
                   printf("Set LAST_OUT to 0x%x\n", iLastOut);
                   
                   uint32_t u32StartPos = OElistArrayTecna[iTargetLastPos].absAddress;
@@ -373,37 +376,57 @@ void simpletest(char *ifname)
             printf("Start ACYCLIC TEST\n");
             /// Print OEList - Start
             printf("\n");
-            printf("OElist.Entries is %d \n",OElist.Entries);
-            printf("\n");
+            printf("Search for %s which length is %d\n",TECNA_REF_SPEED,(int)strlen(TECNA_REF_SPEED));
+               
+            /// Find the reference speed REF_SPEED
+            ec_OElistt OEListRefSpeed;
+            int iTargetRefEntryPos = -1;
+            for (i = 0; i < iOelArryItems; i++){
+               memset(&OElistTemp,0,sizeof(ec_OElistt));
+               memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
+               /// printf("OElist item at %d entry.\n",i);
+               for(int h = 0 ; h < OElistTemp.Entries ; h++)
+               {
+                  #ifdef PRINT_OELIST_TEMP
+                     printf("OElist.Name[i] is %s at %d entry.\n",OElistTemp.Name[h],h);
+                     printf("OElist Name lenght %d\n",(int)strlen(OElistTemp.Name[h]));
+                     printf("OElist.DataType[i] is %d at %d entry\n",OElistTemp.DataType[h],h);
+                     printf("\n");
+                  #endif
+                  if (!strncmp(OElistTemp.Name[h], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], i);
+                     iTargetRefPos = i;
+                     iTargetRefEntryPos = h;
+                     memcpy(&OEListRefSpeed,&OElistTemp,sizeof(ec_OElistt));
+                     h = OElistTemp.Entries;
+                  }  /// else
+               } /// end for
+            } /// End for
 
-            for( i = 0 ; i < OElist.Entries ; i++)
-            {
-               if (!strncmp(OElist.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
-                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElist.Name[i], i);
-                     iTargetWelCurPos = i;
-                     printf("OElist.Name[i] is %s at %d entry. Len is % d\n",OElist.Name[i],i,(int)strlen(OElist.Name[i]));
-                     printf("OElist.DataType[i] is %d at %d entry\n",OElist.DataType[i],i);
-                     printf("OElist.BitLength[i] is %d at %d entry\n",OElist.BitLength[i] ,i);
-                     printf("OElist.ObjAccess[i] is %d at %d entry\n",OElist.ObjAccess[i],i);
-                     printf("OElist.ValueInfo[i] is %d at %d entry\n",OElist.ValueInfo[i],i);
-                     i = OElist.Entries; /// Break for cycle
-               } /// 
-            } // End for
-
-            if (iTargetWelCurPos == -1){
+            if (iTargetRefPos == -1){
                printf(" %s Did not find\n",TECNA_REF_SPEED);
-            } /// else
-            printf("\n");
+            } 
+            else
+            {
+               printf(" %s FOUND\n",TECNA_REF_SPEED);
+               printf("OElist.Name[i] is %s  \n",OEListRefSpeed.Name[iTargetRefEntryPos]);
+               printf("OElist.DataType[i] is %d \n",OEListRefSpeed.DataType[iTargetRefEntryPos]);
+               printf("OElist.BitLength[i] is %d \n",OEListRefSpeed.BitLength[iTargetRefEntryPos]);
+               printf("OElist.ObjAccess[i] is %d \n",OEListRefSpeed.ObjAccess[iTargetRefEntryPos]);
+               printf("OElist.ValueInfo[i] is %d \n",OEListRefSpeed.ValueInfo[iTargetRefEntryPos]);
 
+               (ec_slave[0].outputs[iTargetRefPos]) = 15;
+            }
+            printf("\n");
          }
       }
       else
       {
          printf("No slaves found!\n");
       }
-      printf("End simple test, close socket\n");
-      /* stop SOEM, close socket */
-      ec_close();
+   printf("End simple test, close socket\n");
+   /* stop SOEM, close socket */
+   ec_close();
    }
    else
    {
