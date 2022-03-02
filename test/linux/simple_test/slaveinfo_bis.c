@@ -371,7 +371,7 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                                     OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
                                     /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                                 } else {
-                                    printf("Right access for item % d is not managed for entry %d\n",iOelArryItems,h);
+                                    printf("Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
                                 }
                             }
                         } /// End for
@@ -638,6 +638,43 @@ void si_sdo(int cnt)
             /// printf("OEList dump: Entries: %d\n",OElist.Entries);
             while(EcatError) printf("- %s\n", ec_elist2string());
 
+            /***********************************************************************/
+
+            /// printf("OElist.Entries are %d\n", OElist.Entries);
+            /// printf("Analyze item %d\n", iOelArryItems);
+            memset(&OElistArray[iOelArryItems],0,sizeof(ec_OElistt));
+            memcpy(&OElistArray[iOelArryItems],&OElist,sizeof(ec_OElistt));
+            // char *itemName = dtype2string(OElist.DataType[obj_subidx], bitlen);
+            memcpy(&OElistArray[iOelArryItems].Name,OElist.Name[0],20);
+            /// printf("Collecting for array at item % d\n",iOelArryItems);
+
+            memcpy(&OElistArrayTecna[iOelArryItems].OElistArrayItem,
+            &OElistArray[iOelArryItems],
+            sizeof(ec_OElistt)) ; 
+            for(int h = 0 ; h < OElist.Entries ; h++)
+            {
+                printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",OElistArray[iOelArryItems].BitLength[h]);
+                if (OElistArray[iOelArryItems].ObjAccess[h] == 127){
+                    if (iOelArryItems!= 0){
+                        // To restore u32AbsAddrOut = u32AbsAddrOut +  (bitlen)/8; 
+                    } /// else
+                    // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrOut;
+                    /// printf("Analyze item %d. Absolute address OUTPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
+                } else {
+                    if (OElistArray[iOelArryItems].ObjAccess[h] == 135){
+                        if (iOelArryItems!= 0){
+                            // To restore u32AbsAddrIn = u32AbsAddrIn +  (bitlen)/8; 
+                        } /// else
+                        // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
+                        /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
+                    } else {
+                        printf("Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
+                    }
+                }
+            } /// End for
+            iOelArryItems++;
+
+            /***********************************************************************/
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
             {
                 int l = sizeof(max_sub);
@@ -650,6 +687,7 @@ void si_sdo(int cnt)
 
             for( j = 0 ; j < max_sub+1 ; j++)
             {
+                #define PRINT_NOW
                  #ifdef PRINT_NOW
                 /// printf("OEList dump\n");
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
@@ -815,11 +853,8 @@ int slavemain(char *argv)
        printSDO = FALSE;
        printMAP = TRUE;
    } else {
-       printSDO = FALSE;
-       printMAP = TRUE;
-      /* printSDO = TRUE;
-       printMAP = FALSE;
-       */
+      printSDO = TRUE;
+      printMAP = FALSE; 
    }
        /* start slaveinfo */
 

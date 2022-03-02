@@ -125,6 +125,18 @@ void simpletest(char *ifname)
          printf("%d slaves found and configured.\n", ec_slavecount);
          printf("\n");
 
+/*****************************
+ * 
+ *  printf("ec_init on %s succeeded.\n",ifname);
+      if ( ec_config(FALSE, &IOmap) > 0 )
+      {
+         printf("%d slaves found and configured.\n",ec_slavecount);
+         ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE);
+
+         ec_configdc();
+
+         ec_readstate();
+ * ****************************/
 
          ec_config_map(&IOmap);
 
@@ -376,25 +388,26 @@ void simpletest(char *ifname)
             printf("Start ACYCLIC TEST\n");
             /// Print OEList - Start
             printf("\n");
-            printf("Search for %s which length is %d\n",TECNA_REF_SPEED,(int)strlen(TECNA_REF_SPEED));
+            printf("Search for %s which length is %d\n",TECNA_ACYC_PARAM,(int)strlen(TECNA_ACYC_PARAM));
                
-            /// Find the reference speed REF_SPEED
+            /// Find the reference speed TECNA_ACYC_PARAM
             ec_OElistt OEListRefSpeed;
             int iTargetRefEntryPos = -1;
             for (i = 0; i < iOelArryItems; i++){
                memset(&OElistTemp,0,sizeof(ec_OElistt));
                memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
-               /// printf("OElist item at %d entry.\n",i);
+               printf("OElist ACYC item at %d entry.\n",i);
                for(int h = 0 ; h < OElistTemp.Entries ; h++)
                {
+                  #define PRINT_OELIST_TEMP
                   #ifdef PRINT_OELIST_TEMP
                      printf("OElist.Name[i] is %s at %d entry.\n",OElistTemp.Name[h],h);
                      printf("OElist Name lenght %d\n",(int)strlen(OElistTemp.Name[h]));
                      printf("OElist.DataType[i] is %d at %d entry\n",OElistTemp.DataType[h],h);
                      printf("\n");
                   #endif
-                  if (!strncmp(OElistTemp.Name[h], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
-                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], i);
+                  if (!strncmp(OElistTemp.Name[h], TECNA_ACYC_PARAM, (int)strlen(TECNA_ACYC_PARAM) ) ){
+                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_ACYC_PARAM,OElistTemp.Name[h], i);
                      iTargetRefPos = i;
                      iTargetRefEntryPos = h;
                      memcpy(&OEListRefSpeed,&OElistTemp,sizeof(ec_OElistt));
@@ -404,20 +417,59 @@ void simpletest(char *ifname)
             } /// End for
 
             if (iTargetRefPos == -1){
-               printf(" %s Did not find\n",TECNA_REF_SPEED);
+               printf(" %s Did not find\n",TECNA_ACYC_PARAM);
             } 
             else
             {
-               printf(" %s FOUND\n",TECNA_REF_SPEED);
+               printf(" %s FOUND\n",TECNA_ACYC_PARAM);
                printf("OElist.Name[i] is %s  \n",OEListRefSpeed.Name[iTargetRefEntryPos]);
                printf("OElist.DataType[i] is %d \n",OEListRefSpeed.DataType[iTargetRefEntryPos]);
                printf("OElist.BitLength[i] is %d \n",OEListRefSpeed.BitLength[iTargetRefEntryPos]);
                printf("OElist.ObjAccess[i] is %d \n",OEListRefSpeed.ObjAccess[iTargetRefEntryPos]);
                printf("OElist.ValueInfo[i] is %d \n",OEListRefSpeed.ValueInfo[iTargetRefEntryPos]);
 
-               (ec_slave[0].outputs[iTargetRefPos]) = 15;
+               /// (ec_slave[0].outputs[iTargetRefPos]) = 15;
             }
             printf("\n");
+
+
+            /****Acyclic Test Start Here*/
+             /* wait for all slaves to reach SAFE_OP state */
+            ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
+
+            oloop = ec_slave[0].Obytes;
+            if ((oloop == 0) && (ec_slave[0].Obits > 0))
+               oloop = 1;
+            if (oloop > 8)
+               oloop = 8;
+            iloop = ec_slave[0].Ibytes;
+            if ((iloop == 0) && (ec_slave[0].Ibits > 0))
+               iloop = 1;
+            if (iloop > 8)
+               iloop = 8;
+
+            printf("Number of ouptut Bytes is %d but oloop is %d\n",ec_slave[0].Obytes, oloop );
+            printf("Number of input Bytes is %d but iloop is %d\n",ec_slave[0].Ibytes, iloop );
+
+            /* acyclic loop 500 x 20ms = 10s */
+            
+            for(i = 1; i <= 50; i++)
+            {
+               printf("Processdata cycle %d , DCtime %12lld, O:", i, ec_DCtime);
+               for(j = 0 ; j < oloop; j++)
+               {
+                  printf(" %2.2x", *(ec_slave[0].outputs + j));
+               }
+               printf(" I:");
+               for(j = 0 ; j < iloop; j++)
+               {
+                  printf(" %2.2x", *(ec_slave[0].inputs + j));
+               }
+               printf("\n");
+               osal_usleep(20000);
+            }
+            
+
          }
       }
       else
