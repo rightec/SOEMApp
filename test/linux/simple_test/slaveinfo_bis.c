@@ -371,7 +371,7 @@ int si_PDOassign(uint16 slave, uint16 PDOassign, int mapoffset, int bitoffset)
                                     OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
                                     /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                                 } else {
-                                    printf("Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
+                                    printf("si_PDOassign: Right access for item %d is not managed for entry(h) %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
                                 }
                             }
                         } /// End for
@@ -664,11 +664,13 @@ void si_sdo(int cnt)
                     if (OElistArray[iOelArryItems].ObjAccess[h] == 135){
                         if (iOelArryItems!= 0){
                             // To restore u32AbsAddrIn = u32AbsAddrIn +  (bitlen)/8; 
+                            printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                         } /// else
                         // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
+                            printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                         /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                     } else {
-                        printf("Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
+                        printf("si_sdo: Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
                     }
                 }
             } /// End for

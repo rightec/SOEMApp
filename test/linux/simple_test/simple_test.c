@@ -399,7 +399,7 @@ void simpletest(char *ifname)
                printf("OElist ACYC item at %d entry.\n",i);
                for(int h = 0 ; h < OElistTemp.Entries ; h++)
                {
-                  #define PRINT_OELIST_TEMP
+                  // #define PRINT_OELIST_TEMP
                   #ifdef PRINT_OELIST_TEMP
                      printf("OElist.Name[i] is %s at %d entry.\n",OElistTemp.Name[h],h);
                      printf("OElist Name lenght %d\n",(int)strlen(OElistTemp.Name[h]));
@@ -450,6 +450,7 @@ void simpletest(char *ifname)
 
             printf("Number of ouptut Bytes is %d but oloop is %d\n",ec_slave[0].Obytes, oloop );
             printf("Number of input Bytes is %d but iloop is %d\n",ec_slave[0].Ibytes, iloop );
+            
 
             /* acyclic loop 500 x 20ms = 10s */
             
