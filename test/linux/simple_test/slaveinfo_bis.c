@@ -175,7 +175,9 @@ char* SDO2string(uint16 slave, uint16 index, uint8 subidx, uint16 dtype)
    char es[32];
 
    memset(&usdo, 0, 128);
+   
    ec_SDOread(slave, index, subidx, FALSE, &l, &usdo, EC_TIMEOUTRXM);
+   
    if (EcatError)
    {
       return ec_elist2string();
@@ -613,6 +615,7 @@ void si_sdo(int cnt)
             char name[128] = { 0 };
 
             ec_readODdescription(i, &ODlist);
+            
             #ifdef TECNA_ENABLE_VERBOSE
             while(EcatError) printf(" - %s\n", ec_elist2string());
             #endif
@@ -622,7 +625,6 @@ void si_sdo(int cnt)
             {
                 printf("0x%04x      %-40s      [%s]\n", ODlist.Index[i], name,
                        otype2string(ODlist.ObjectCode[i]));
-
                        /// printf("I found this name: %s\n",name);
             }
             else
@@ -632,12 +634,14 @@ void si_sdo(int cnt)
                        ODlist.MaxSub[i], ODlist.MaxSub[i]);
             }
             #endif
+            
 
+            
             memset(&OElist, 0, sizeof(OElist));
             ec_readOE(i, &ODlist, &OElist);
             /// printf("OEList dump: Entries: %d\n",OElist.Entries);
             while(EcatError) printf("- %s\n", ec_elist2string());
-
+            
             /***********************************************************************/
 
             /// printf("OElist.Entries are %d\n", OElist.Entries);
@@ -653,21 +657,21 @@ void si_sdo(int cnt)
             sizeof(ec_OElistt)) ; 
             for(int h = 0 ; h < OElist.Entries ; h++)
             {
-                printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",OElistArray[iOelArryItems].BitLength[h]);
+                /// printf("OElistArray[iOelArryItems].BitLength[h] is %d\n",OElistArray[iOelArryItems].BitLength[h]);
                 if (OElistArray[iOelArryItems].ObjAccess[h] == 127){
                     if (iOelArryItems!= 0){
                         // To restore u32AbsAddrOut = u32AbsAddrOut +  (bitlen)/8; 
                     } /// else
                     // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrOut;
+                    printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                     /// printf("Analyze item %d. Absolute address OUTPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                 } else {
                     if (OElistArray[iOelArryItems].ObjAccess[h] == 135){
                         if (iOelArryItems!= 0){
                             // To restore u32AbsAddrIn = u32AbsAddrIn +  (bitlen)/8; 
-                            printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                         } /// else
                         // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
-                            printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
+                        printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                         /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                     } else {
                         printf("si_sdo: Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
@@ -675,7 +679,7 @@ void si_sdo(int cnt)
                 }
             } /// End for
             iOelArryItems++;
-
+           
             /***********************************************************************/
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
             {
@@ -686,29 +690,41 @@ void si_sdo(int cnt)
                 max_sub = ODlist.MaxSub[i];
             }
 
-
+            
+            printf("OEList dump\n");
             for( j = 0 ; j < max_sub+1 ; j++)
             {
                 #define PRINT_NOW
                  #ifdef PRINT_NOW
-                /// printf("OEList dump\n");
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
                     snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[j]);
                     printf("    0x%02x      %-40s      [%-16s %6s]      ", j, name,
                            dtype2string(OElist.DataType[j], OElist.BitLength[j]),
                            access2string(OElist.ObjAccess[j]));
+                    
                     if ((OElist.ObjAccess[j] & 0x0007))
                     {
                
                         printf("%s", SDO2string(cnt, ODlist.Index[i], j, OElist.DataType[j]));
-                
                     }
+
+                    if ((OElist.ObjAccess[j] & 0x007f))
+                    {
+                        uint16_t u16val = 12; // max motor current in mA
+                        /// ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
+                        if (ODlist.Index[i] >= 0x2000){
+                            ec_SDOwrite(cnt, ODlist.Index[i], j, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
+                        }              
+                    }
+                    
                     printf("\n");
                 }
                 #endif
             } // End for cycle
+           
         }
+        
     }
     else
     {
@@ -756,6 +772,7 @@ int slaveinfo(char *ifname)
 
 
          ec_readstate();
+        
          for( cnt = 1 ; cnt <= ec_slavecount ; cnt++)
          {
             printf("\nSlave:%d\n Name:%s\n Output size: %dbits\n Input size: %dbits\n State: %d\n Delay: %d[ns]\n Has DC: %d\n",
@@ -774,6 +791,7 @@ int slaveinfo(char *ifname)
                   printf(" SM%1d A:%4.4x L:%4d F:%8.8x Type:%d\n",nSM, etohs(ec_slave[cnt].SM[nSM].StartAddr), etohs(ec_slave[cnt].SM[nSM].SMlength),
                          etohl(ec_slave[cnt].SM[nSM].SMflags), ec_slave[cnt].SMtype[nSM]);
             }
+            
             for(j = 0 ; j < ec_slave[cnt].FMMUunused ; j++)
             {
                printf(" FMMU%1d Ls:%8.8x Ll:%4d Lsb:%d Leb:%d Ps:%4.4x Psb:%d Ty:%2.2x Act:%2.2x\n", j,
@@ -781,11 +799,13 @@ int slaveinfo(char *ifname)
                        ec_slave[cnt].FMMU[j].LogEndbit, etohs(ec_slave[cnt].FMMU[j].PhysStart), ec_slave[cnt].FMMU[j].PhysStartBit,
                        ec_slave[cnt].FMMU[j].FMMUtype, ec_slave[cnt].FMMU[j].FMMUactive);
             }
+             
             printf(" FMMUfunc 0:%d 1:%d 2:%d 3:%d\n",
                      ec_slave[cnt].FMMU0func, ec_slave[cnt].FMMU1func, ec_slave[cnt].FMMU2func, ec_slave[cnt].FMMU3func);
             printf(" MBX length wr: %d rd: %d MBX protocols : %2.2x\n", ec_slave[cnt].mbx_l, ec_slave[cnt].mbx_rl, ec_slave[cnt].mbx_proto);
             ssigen = ec_siifind(cnt, ECT_SII_GENERAL);
             /* SII general section */
+            
             if (ssigen)
             {
                ec_slave[cnt].CoEdetails = ec_siigetbyte(cnt, ssigen + 0x07);
@@ -801,15 +821,18 @@ int slaveinfo(char *ifname)
                ec_slave[cnt].Ebuscurrent += ec_siigetbyte(cnt, ssigen + 0x0f) << 8;
                ec_slave[0].Ebuscurrent += ec_slave[cnt].Ebuscurrent;
             }
+            
             printf(" CoE details: %2.2x FoE details: %2.2x EoE details: %2.2x SoE details: %2.2x\n",
                     ec_slave[cnt].CoEdetails, ec_slave[cnt].FoEdetails, ec_slave[cnt].EoEdetails, ec_slave[cnt].SoEdetails);
             printf(" Ebus current: %d[mA]\n only LRD/LWR:%d\n",
                     ec_slave[cnt].Ebuscurrent, ec_slave[cnt].blockLRW);
+           
             if ((ec_slave[cnt].mbx_proto & ECT_MBXPROT_COE) && printSDO)
             {
                 printf("SI_SDO function run\n");
                 si_sdo(cnt);
             }
+            
             if(printMAP)
             {
                 if (ec_slave[cnt].mbx_proto & ECT_MBXPROT_COE){
@@ -823,6 +846,7 @@ int slaveinfo(char *ifname)
                 }
             }
          }
+         
         iRet = 0;
       }
       else

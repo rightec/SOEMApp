@@ -50,8 +50,8 @@ void simpletest(char *ifname)
    ec_OElistt OElistTemp;
 
 
-   sprintf(testRevision, "tag@0103_00.txt");
-   sprintf(tagCommit, "tag_0103_0x");
+   sprintf(testRevision, "tag@0903_00.txt");
+   sprintf(tagCommit, "tag_0903_0x");
    printf("\n");
    printf("Starting simple test revision %s\n", testRevision);
    printf("Against Slave with tag; %s\n", tagCommit);
@@ -119,7 +119,6 @@ void simpletest(char *ifname)
    {
       printf("ec_init on %s succeeded.\n", ifname);
       /* find and auto-config slaves */
-
       if (ec_config_init(FALSE) > 0)
       {
          printf("%d slaves found and configured.\n", ec_slavecount);
@@ -137,7 +136,6 @@ void simpletest(char *ifname)
 
          ec_readstate();
  * ****************************/
-
          ec_config_map(&IOmap);
 
          ec_configdc();
@@ -396,7 +394,7 @@ void simpletest(char *ifname)
             for (i = 0; i < iOelArryItems; i++){
                memset(&OElistTemp,0,sizeof(ec_OElistt));
                memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
-               printf("OElist ACYC item at %d entry.\n",i);
+               /// printf("OElist ACYC item at %d entry.\n",i);
                for(int h = 0 ; h < OElistTemp.Entries ; h++)
                {
                   // #define PRINT_OELIST_TEMP
@@ -427,7 +425,6 @@ void simpletest(char *ifname)
                printf("OElist.BitLength[i] is %d \n",OEListRefSpeed.BitLength[iTargetRefEntryPos]);
                printf("OElist.ObjAccess[i] is %d \n",OEListRefSpeed.ObjAccess[iTargetRefEntryPos]);
                printf("OElist.ValueInfo[i] is %d \n",OEListRefSpeed.ValueInfo[iTargetRefEntryPos]);
-
                /// (ec_slave[0].outputs[iTargetRefPos]) = 15;
             }
             printf("\n");
@@ -451,25 +448,33 @@ void simpletest(char *ifname)
             printf("Number of ouptut Bytes is %d but oloop is %d\n",ec_slave[0].Obytes, oloop );
             printf("Number of input Bytes is %d but iloop is %d\n",ec_slave[0].Ibytes, iloop );
             
+            if ((OEListRefSpeed.ObjAccess[iTargetRefEntryPos] & 0x007f))
+            {
+               uint16_t u16val = 12; /// Counter to set
+               uint16_t index = 0x200d + 0x10;
+               printf("iTargetRefEntryPos is %d and right access are 0x%x\n",iTargetRefEntryPos,(OEListRefSpeed.ObjAccess[iTargetRefEntryPos] ));
+               /// ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
+               ec_SDOwrite(0, index, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
+            }
 
             /* acyclic loop 500 x 20ms = 10s */
             
-            for(i = 1; i <= 50; i++)
+            for(i = 1; i <= 5; i++)
             {
                printf("Processdata cycle %d , DCtime %12lld, O:", i, ec_DCtime);
-               for(j = 0 ; j < oloop; j++)
+               for(j = 0 ; j < 400; j++)
                {
+                  *(ec_slave[0].outputs + j) = j;
                   printf(" %2.2x", *(ec_slave[0].outputs + j));
                }
                printf(" I:");
-               for(j = 0 ; j < iloop; j++)
+               for(j = 0 ; j < 400; j++)
                {
                   printf(" %2.2x", *(ec_slave[0].inputs + j));
                }
                printf("\n");
                osal_usleep(20000);
-            }
-            
+            }            
 
          }
       }
