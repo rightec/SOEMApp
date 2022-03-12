@@ -680,7 +680,9 @@ void si_sdo(int cnt)
             } /// End for
             iOelArryItems++;
            
+           #ifdef PRINT_NOW
             printf("ODlist.Index[%d] is 0x%x: ",i,ODlist.Index[i]);
+            #endif
 
             /***********************************************************************/
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
@@ -692,39 +694,40 @@ void si_sdo(int cnt)
                 max_sub = ODlist.MaxSub[i];
             }
 
-            
+            #ifdef PRINT_NOW
             printf("OEList dump\n");
+            #endif
             for( j = 0 ; j < max_sub+1 ; j++)
             {
-                #define PRINT_NOW
-                 #ifdef PRINT_NOW
                 if ((OElist.DataType[j] > 0) && (OElist.BitLength[j] > 0))
                 {
+                    #ifdef PRINT_NOW
                     snprintf(name, sizeof(name) - 1, "\"%s\"", OElist.Name[j]);
                     printf("    0x%02x      %-40s      [%-16s %6s]      ", j, name,
                            dtype2string(OElist.DataType[j], OElist.BitLength[j]),
                            access2string(OElist.ObjAccess[j]));
+                    #endif
                     
                     if ((OElist.ObjAccess[j] & 0x0007))
                     {
                
-                        printf("%s", SDO2string(cnt, ODlist.Index[i], j, OElist.DataType[j]));
+                       /// printf("%s", SDO2string(cnt, ODlist.Index[i], j, OElist.DataType[j]));
                     }
 
-                    /**This was a test TO REMOVE in tag12*/
-                    if ((OElist.ObjAccess[j] & 0x007f))
+                    if ((OElist.ObjAccess[j] == 0x007f))
                     {
-                        uint16_t u16val = 12; /// Data to write
+                        uint16_t u16val = i +j; /// Data to write
                         if (ODlist.Index[i] >= 0x2000){
-                            printf("Tryng to write to 0x%x at index %d and access index %d. Right are: 0x%x \n", ODlist.Index[i],i,j,OElist.ObjAccess[j]);
+                            printf("Tryng to write %d to 0x%x address at index %d and access index %d. Right are: 0x%x \n", u16val,ODlist.Index[i],i,j,OElist.ObjAccess[j]);
                             ec_SDOwrite(cnt, ODlist.Index[i], j, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
                         } ///              
                     }
                     /**/
-                    
+                    #ifdef PRINT_NOW
                     printf("\n");
+                    #endif
                 }
-                #endif
+                
             } // End for cycle
            
         }
