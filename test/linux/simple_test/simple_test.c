@@ -28,11 +28,33 @@ boolean inOP;
 uint8 currentgroup = 0;
 boolean g_b_cyclic = TRUE; /// True is CYC and false is ACYC
 
+/**
+ * @brief Set the output int16 object
+ * 
+ * @param slave_no: slave number in ethercat network
+ * @param module_index: module index as index internal to the slave in case more than one
+ *  channel
+ * @param value: value to write
+ */
+void set_output_int16 (uint16 slave_no, uint8 module_index, int16 value)
+{
+   uint8 *data_ptr;
+
+   data_ptr = ec_slave[slave_no].outputs;
+   /* Move pointer to correct module index*/
+   data_ptr += module_index * 2;
+   /* Read value byte by byte since all targets can't handle misaligned
+    * addresses
+    */
+   *data_ptr++ = (value >> 0) & 0xFF;
+   *data_ptr++ = (value >> 8) & 0xFF;
+}
 
 
 void simpletest(char *ifname)
 {
-   int i, j, oloop, iloop, chk;
+   int i, oloop, iloop;
+   /// int j;
    needlf = FALSE;
    inOP = FALSE;
 
@@ -145,240 +167,7 @@ void simpletest(char *ifname)
 
          if (g_b_cyclic == TRUE)
          {
-            /* wait for all slaves to reach SAFE_OP state */
-            ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
-
-            oloop = ec_slave[0].Obytes;
-            if ((oloop == 0) && (ec_slave[0].Obits > 0))
-               oloop = 1;
-            if (oloop > 8)
-               oloop = 8;
-            iloop = ec_slave[0].Ibytes;
-            if ((iloop == 0) && (ec_slave[0].Ibits > 0))
-               iloop = 1;
-            if (iloop > 8)
-               iloop = 8;
-
-            printf("Number of ouptut Bytes is %d but oloop is %d\n",ec_slave[0].Obytes, oloop );
-            printf("Number of input Bytes is %d but iloop is %d\n",ec_slave[0].Ibytes, iloop );
-
-            printf("segments : %d : %d %d %d %d\n", ec_group[0].nsegments, ec_group[0].IOsegment[0], ec_group[0].IOsegment[1], ec_group[0].IOsegment[2], ec_group[0].IOsegment[3]);
-
-            printf("Request operational state for all slaves\n");
-            printf("\n");
-
-            expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
-            printf("Calculated workcounter %d\n", expectedWKC);
-            ec_slave[0].state = EC_STATE_OPERATIONAL;
-            /* send one valid process data to make outputs in slaves happy*/
-            ec_send_processdata();
-            ec_receive_processdata(EC_TIMEOUTRET);
-            /* request OP state for all slaves */
-            ec_writestate(0);
-            chk = 200;
-            /* wait for all slaves to reach OP state */
-            do
-            {
-               ec_send_processdata();
-               ec_receive_processdata(EC_TIMEOUTRET);
-               ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
-            } while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
-            if (ec_slave[0].state == EC_STATE_OPERATIONAL)
-            {
-               printf("Operational state reached for all slaves.\n");
-               printf("\n");
-
-               inOP = TRUE;
-
-               // printf("Slave Cycle Time is: %d \n ",  ec_slave[0].DCcycle); // is 0
-               // printf("Slave Type is: %d \n ",  ec_slave[0].Dtype); // is 0
-               
-   #ifdef FINDREF_ON_ODLIST_AND_PRINT
-               /// Find the REF_SPEED name - Start
-               printf("Scan  ODList and find REF_SPEED in it\n");
-               printf("\n");
-               for( i = 0 ; i < ODlist.Entries ; i++)
-               {
-               if (strncmp(ODlist.Name[i], TECNA_REF_SPEED, (int)strlen(ODlist.Name[i]) ) )
-                  {
-                     printf("NOT Found REF %s at %d entry. strlen(name) is %d , (int)strlen(TECNA_REF_SPEED) is %d    \n",ODlist.Name[i],i,(int)strlen(ODlist.Name[i]),(int)strlen(TECNA_REF_SPEED));
-                  }  else {
-                     printf("Find REF %s at %d entry\n",ODlist.Name[i],i);
-                     iTargetRefPos = i;
-                     i = ODlist.Entries;
-                  }
-               } // End for
-               /// Find the REF_SPEED name - End
-   #endif
-
-   #ifdef SCAN_OE_TO_FIND_REFERENCES
-               /// Find the WEL_CUR and REF_SPEED name - Start
-               printf("Scan Print full OEList and find REF_SPEED and WEL_CURR in it\n");
-               printf("\n");
-               iTargetWelCurPos = -1;
-               iTargetRefPos = -1;
-               for( i = 0 ; i < OElist.Entries ; i++)
-               {
-               printf("String found %s at %d entry\n",OElist.Name[i], i);
-               if (!strncmp(OElist.Name[i], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
-                  {
-                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElist.Name[i], i);
-                     iTargetWelCurPos = i;
-                  } else {
-                     if (!strncmp(OElist.Name[i], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
-                        printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElist.Name[i], i);
-                        iTargetRefPos = i;
-                     } /// else
-                  }
-               } // End for
-
-               printf("\n");
-               if (iTargetWelCurPos > -1){
-                  printf("Target wel curr is at: %d\n", iWelCurr);
-                  iWelCurr = (ec_slave[0].inputs[iTargetWelCurPos]);
-               } else {
-                     printf("Target wel curr NOT FOUND\n");
-               }
-
-               if (iTargetRefPos > -1){
-                  printf("Target ref speed  is at: %d\n", iTargetRefPos);
-               } else {
-                     printf("Target ref speed NOT FOUND\n");
-               }
-
-               /// Find the WEL_CUR name - End
-               #endif
-
-         /// Find the reference speed REF_SPEED
-         for (i = 0; i < iOelArryItems; i++){
-            memset(&OElistTemp,0,sizeof(ec_OElistt));
-            memcpy(&OElistTemp,&OElistArray[i],sizeof(ec_OElistt));
-            /// printf("OElist item at %d entry.\n",i);
-            for(int h = 0 ; h < OElistTemp.Entries ; h++)
-            {
-               if (!strncmp(OElistTemp.Name[h], TECNA_WEL_CUR, (int)strlen(TECNA_WEL_CUR) ) )
-                  {
-                     printf("Compared OK %s to string found %s at %d entry\n",TECNA_WEL_CUR,OElistTemp.Name[h], i);
-                     iTargetWelCurPos = h;
-                     h = OElistTemp.Entries;
-                  } else {
-                     if (!strncmp(OElistTemp.Name[h], TECNA_REF_SPEED, (int)strlen(TECNA_REF_SPEED) ) ){
-                        printf("Compared OK %s to string found %s at %d entry\n",TECNA_REF_SPEED,OElistTemp.Name[h], i);
-                        iTargetRefPos = i;
-                        h = OElistTemp.Entries;
-                     } else {
-                        if (!strncmp(OElistTemp.Name[h], TECNA_LAST, (int)strlen(TECNA_LAST) ) ){
-                           printf("Compared OK %s to string found %s at %d entry\n",TECNA_LAST,OElistTemp.Name[h], i);
-                           iTargetLastPos = i;
-                           h = OElistTemp.Entries;
-                        } /// else
-                     }
-                  }
-            } /// End for
-         } /// end for
-
-
-   #ifdef UPDATE_RND_ITEM
-               *(ec_slave[0].outputs + 4) = 3;
-               (ec_slave[0].outputs[9]) = 15;
-   #endif
-               printf("\n");
-               if (iTargetWelCurPos > -1){
-                  printf("Target wel curr is at: %d\n", iWelCurr);
-                  iWelCurr = (ec_slave[0].inputs[iTargetWelCurPos]);
-               } else {
-                     printf("Target wel curr NOT FOUND\n");
-               }
-
-               if (iTargetRefPos > -1){
-                  printf("Set REF_SPEED to %d\n", iRefSpeed);
-                  (ec_slave[0].outputs[iTargetRefPos]) = iRefSpeed;
-               } else {
-                  printf("Unable to Set REF_SPEED \n");
-               }
-
-               if (iTargetLastPos > -1){
-                  printf("Set LAST_OUT to 0x%x\n", iLastOut);
-                  
-                  uint32_t u32StartPos = OElistArrayTecna[iTargetLastPos].absAddress;
-                  /// It is a 16 bit
-                  const uint8_t twoBytes = 2;
-                  for (int i32 = 0; i32 < twoBytes; i32++){
-                     uint8_t u8 = (iLastOut >> ((8*(1-i32))) & 0x00FF);
-                     *(&ec_slave[0].outputs[u32StartPos] + (twoBytes - i32) -1) = u8;
-                     printf("Byte %d of iLastOut 0x%x is 0x%x write to output %d \n",i32,iLastOut,u8,u32StartPos + (twoBytes - i32) -1);
-                  } /// end for tag@2602_00
-                  
-               } else {
-                  printf("Unable to Set LAST_OUT \n");
-               }
-
-               printf("\n");
-
-
-               printf("\n");
-               printf("Start cyclyc test");
-
-
-
-               /* cyclic loop */
-               i = 0;
-               while (i <= iTargetRefSpeedAttempt)
-               {
-                  ec_send_processdata();
-                  wkc = ec_receive_processdata(EC_TIMEOUTRET);
-
-                  if (wkc >= expectedWKC)
-                  {
-                     printf("Processdata cycle %4d, WKC %d , O:", i, wkc);
-
-                     for (j = 0; j < oloop; j++)
-                     {
-                        printf(" %2.2x", *(ec_slave[0].outputs + j));
-                     }
-
-                     printf(" I:");
-                     for (j = 0; j < iloop; j++)
-                     {
-                        printf(" %2.2x", *(ec_slave[0].inputs + j));
-                     }
-                     printf(" T:%" PRId64 "\r", ec_DCtime);
-                     needlf = TRUE;
-
-                     if (ec_slave[0].inputs[iTargetRefPos] == iRefSpeed){
-                        printf("Target reached at: %d\n", i);
-                        i = iTargetRefSpeedAttempt;
-                     } ///
-
-   /*
-                     iWelCurr = ec_slave[0].inputs[iTargetWelCurPos];
-                     if (iWelCurr != -1){
-                        printf("Target wel curr is at: %d\n", iWelCurr);
-                     } ///
-                     */
-                  }
-                  osal_usleep(5000);
-                  i++;
-               } // end while cycle
-               inOP = FALSE;
-            }
-            else
-            {
-               printf("Not all slaves reached operational state.\n");
-               ec_readstate();
-               for (i = 1; i <= ec_slavecount; i++)
-               {
-                  if (ec_slave[i].state != EC_STATE_OPERATIONAL)
-                  {
-                     printf("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s\n",
-                           i, ec_slave[i].state, ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
-                  }
-               }
-            }
-            printf("\nRequest init state for all slaves\n");
-            ec_slave[0].state = EC_STATE_INIT;
-            /* request INIT state for all slaves */
-            ec_writestate(0);
+             printf("CYCLIC TEST not implemented in this branch\n");
          } 
          else 
          {
@@ -432,6 +221,12 @@ void simpletest(char *ifname)
 
             /****Acyclic Test Start Here*/
              /* wait for all slaves to reach SAFE_OP state */
+            ec_config_map(&IOmap);
+
+            ec_configdc();
+
+            printf("Slaves REmapped, state to SAFE_OP.\n");
+            /* wait for all slaves to reach SAFE_OP state */
             ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
 
             oloop = ec_slave[0].Obytes;
@@ -448,6 +243,7 @@ void simpletest(char *ifname)
             printf("Number of ouptut Bytes is %d but oloop is %d\n",ec_slave[0].Obytes, oloop );
             printf("Number of input Bytes is %d but iloop is %d\n",ec_slave[0].Ibytes, iloop );
             
+            /*
             if ((OEListRefSpeed.ObjAccess[iTargetRefEntryPos] & 0x007f))
             {
                uint16_t u16val = 13; /// Counter to set
@@ -456,9 +252,11 @@ void simpletest(char *ifname)
                /// ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
                ec_SDOwrite(0, index, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
             }
+            */
 
             /* acyclic loop 500 x 20ms = 10s */
             
+            /*
             for(i = 1; i <= 1; i++)
             {
                printf("Processdata cycle %d , DCtime %12lld, O:", i, ec_DCtime);
@@ -473,6 +271,19 @@ void simpletest(char *ifname)
                   printf(" %2.2x", *(ec_slave[0].inputs + j));
                }
                printf("\n");
+               osal_usleep(20000);
+            }
+            */
+           printf("Request operational state for all slaves\n");
+         expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
+         printf("Calculated workcounter %d\n", expectedWKC);
+         ec_slave[0].state = EC_STATE_SAFE_OP;
+         /* request OP state for all slaves */
+         ec_writestate(0);
+         osal_usleep(20000);
+            for (int k=0; k<256; k++){
+               printf("set_output_int16(0,k,23); k=0x%x\n",k);
+               set_output_int16(0,k,23);
                osal_usleep(20000);
             }            
 
