@@ -450,8 +450,8 @@ void simpletest(char *ifname)
             
             if ((OEListRefSpeed.ObjAccess[iTargetRefEntryPos] & 0x007f))
             {
-               uint16_t u16val = 12; /// Counter to set
-               uint16_t index = 0x200d + 0x10;
+               uint16_t u16val = 13; /// Counter to set
+               uint16_t index = 0x200d; // + 0x10;
                printf("iTargetRefEntryPos is %d and right access are 0x%x\n",iTargetRefEntryPos,(OEListRefSpeed.ObjAccess[iTargetRefEntryPos] ));
                /// ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
                ec_SDOwrite(0, index, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
@@ -459,16 +459,16 @@ void simpletest(char *ifname)
 
             /* acyclic loop 500 x 20ms = 10s */
             
-            for(i = 1; i <= 5; i++)
+            for(i = 1; i <= 1; i++)
             {
                printf("Processdata cycle %d , DCtime %12lld, O:", i, ec_DCtime);
-               for(j = 0 ; j < 400; j++)
+               for(j = 0 ; j < oloop; j++)
                {
                   *(ec_slave[0].outputs + j) = j;
                   printf(" %2.2x", *(ec_slave[0].outputs + j));
                }
                printf(" I:");
-               for(j = 0 ; j < 400; j++)
+               for(j = 0 ; j < iloop; j++)
                {
                   printf(" %2.2x", *(ec_slave[0].inputs + j));
                }

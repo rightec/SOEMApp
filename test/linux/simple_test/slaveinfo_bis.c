@@ -663,7 +663,7 @@ void si_sdo(int cnt)
                         // To restore u32AbsAddrOut = u32AbsAddrOut +  (bitlen)/8; 
                     } /// else
                     // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrOut;
-                    printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
+                    /// printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                     /// printf("Analyze item %d. Absolute address OUTPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                 } else {
                     if (OElistArray[iOelArryItems].ObjAccess[h] == 135){
@@ -671,15 +671,17 @@ void si_sdo(int cnt)
                             // To restore u32AbsAddrIn = u32AbsAddrIn +  (bitlen)/8; 
                         } /// else
                         // To restore OElistArrayTecna[iOelArryItems].absAddress = u32AbsAddrIn;
-                        printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
+                        /// printf("si_sdo: ObjAccess[h] for h=%d is 0x%x\n",h,OElistArray[iOelArryItems].ObjAccess[h]);
                         /// printf("Analyze item %d. Absolute address INPUT is %d\n", iOelArryItems,OElistArrayTecna[iOelArryItems].absAddress);
                     } else {
-                        printf("si_sdo: Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
+                        /// printf("si_sdo: Right access for item %d is not managed for entry %d. Your right are 0x%x\n",iOelArryItems,h,OElistArray[iOelArryItems].ObjAccess[h]);
                     }
                 }
             } /// End for
             iOelArryItems++;
            
+            printf("ODlist.Index[%d] is 0x%x: ",i,ODlist.Index[i]);
+
             /***********************************************************************/
             if(ODlist.ObjectCode[i] != OTYPE_VAR)
             {
@@ -709,14 +711,16 @@ void si_sdo(int cnt)
                         printf("%s", SDO2string(cnt, ODlist.Index[i], j, OElist.DataType[j]));
                     }
 
+                    /**This was a test TO REMOVE in tag12*/
                     if ((OElist.ObjAccess[j] & 0x007f))
                     {
-                        uint16_t u16val = 12; // max motor current in mA
-                        /// ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
+                        uint16_t u16val = 12; /// Data to write
                         if (ODlist.Index[i] >= 0x2000){
+                            printf("Tryng to write to 0x%x at index %d and access index %d. Right are: 0x%x \n", ODlist.Index[i],i,j,OElist.ObjAccess[j]);
                             ec_SDOwrite(cnt, ODlist.Index[i], j, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTTXM); 
-                        }              
+                        } ///              
                     }
+                    /**/
                     
                     printf("\n");
                 }
